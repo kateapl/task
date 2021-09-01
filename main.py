@@ -7,10 +7,7 @@ from loguru import logger
 
 routes = web.RouteTableDef()
 
-# curl --header "Content-Type: application/json" -X POST -d "{\"title\": \"IPhone 42\", \"description\": \"coolest phone\", \"height\": 65, \"widht\": 21}" http://localhost:8080/create_item
-# curl --header "Content-Type: application/json" -X POST -d "{\"title\": \"Somephone\", \"description\": \"not cool\", \"height\": 35, \"widht\": 21}" http://localhost:8080/create_item
-# curl --header "Content-Type: application/json" -X POST -d "{\"title\": \"laptop\", \"description\": \"cool enough\", \"quality\": 10}" http://localhost:8080/create_item
-# curl --header "Content-Type: application/json" -X POST -d "{\"title\": \"Jon Snow\", \"description\": \"knows nothing\", \"height\": 175, \"widht\": 95}" http://localhost:8080/create_item
+
 @routes.post('/create_item')
 async def create_item(request: web.Request):
     """get json
@@ -23,10 +20,9 @@ async def create_item(request: web.Request):
     db = SingletonClient.get_data_base()
     result = await db.products.insert_one(dict(params))
     if result:
-        return web.json_response({'status': 'ok'}, status=200)
+        return web.json_response({'status': 'product was added'}, status=200)
 
-#curl --header "Content-Type: application/json" -X GET -d "{\"sort\": \"height\"}" http://localhost:8080/get_items
-#curl --header "Content-Type: application/json" --request GET http://localhost:8080/get_items
+
 @routes.get('/get_items')
 async def get_items(request: web.Request):
     """get sort field
@@ -52,33 +48,7 @@ async def get_items(request: web.Request):
 
     return web.Response(text=jsn, headers={'Content-Type': 'application / json'}, status=200)
 
-#curl --header "Content-Type: application/json" -X GET -d "{\"_id\": \"612f6bd43177708f3130e28a\"}" http://localhost:8080/get_item
-@routes.get('/get_item')
-async def get_item(request: web.Request):
-    """get item by id
-    returns all item fields"""
-    params = await request.json()
-    logger.info(params)
 
-    db = SingletonClient.get_data_base()
-    _id = params['_id']
-    try:
-        _id = objectid.ObjectId(_id)
-    except KeyError:
-        return web.json_response({'error': '_id is not specified'}, status=422)
-
-    result = await db.products.find_one({
-        '_id': _id
-    })
-
-    if not result:
-        return web.json_response({'error': 'item not found'}, status=404)
-
-    jsn = json_util.dumps({'item': result})
-    return web.Response(text=jsn, headers={'Content-Type': 'application / json'}, status=200)
-
-
-#curl --header "Content-Type: application/json" -X GET --data "{\"widht\": 21}" http://localhost:8080/get_filter
 @routes.get('/get_filter')
 async def get_items_titles(request: web.Request):
     """get filter field
@@ -106,6 +76,31 @@ async def get_items_titles(request: web.Request):
     products_list = [item['title'] for item in products_list]
 
     jsn = json_util.dumps({'titles': products_list})
+    return web.Response(text=jsn, headers={'Content-Type': 'application / json'}, status=200)
+
+
+@routes.get('/get_item')
+async def get_item(request: web.Request):
+    """get item by id
+    returns all item fields"""
+    params = await request.json()
+    logger.info(params)
+
+    db = SingletonClient.get_data_base()
+    _id = params['_id']
+    try:
+        _id = objectid.ObjectId(_id)
+    except KeyError:
+        return web.json_response({'error': '_id is not specified'}, status=422)
+
+    result = await db.products.find_one({
+        '_id': _id
+    })
+
+    if not result:
+        return web.json_response({'error': 'item not found'}, status=404)
+
+    jsn = json_util.dumps({'item': result})
     return web.Response(text=jsn, headers={'Content-Type': 'application / json'}, status=200)
 
 
